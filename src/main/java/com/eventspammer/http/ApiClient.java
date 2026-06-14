@@ -14,10 +14,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ApiClient {
-
     private final AppConfig config;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final String CONTENT_TYPE_HEADER = "Content-Type";
+    private static final String ACCEPT_HEADER = "Accept";
+    private static final String APPLICATION_JSON = "application/json";
+
 
     public ApiClient(AppConfig config) {
         this.config = config;
@@ -51,6 +55,9 @@ public class ApiClient {
 
     private void applyHeaders(HttpRequest.Builder requestBuilder, RequestDefinition requestDefinition) {
         Map<String, String> mergedHeaders = new LinkedHashMap<>();
+
+        mergedHeaders.put(ACCEPT_HEADER, APPLICATION_JSON);
+        mergedHeaders.put(CONTENT_TYPE_HEADER, APPLICATION_JSON);
 
         if (config.getDefaultHeaders() != null) {
             mergedHeaders.putAll(config.getDefaultHeaders());

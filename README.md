@@ -6,7 +6,7 @@ It can be used to repeatedly create, update, delete, or fetch data through an HT
 
 ## Requirements
 
-- Java 21+
+- Java 17
 - Maven 3.9+
 
 ## Build

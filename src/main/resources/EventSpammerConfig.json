@@ -1,45 +1,40 @@
 {
   "baseUrl": "http://localhost:8080/api",
   "continuous": true,
-  "totalRequests": 100,
+  "totalRequests": 1000000,
   "delayMillis": 500,
   "requestTimeoutSeconds": 10,
+  "rabbitMq": {
+    "enabled": true,
+    "host": "localhost",
+    "port": 5672,
+    "username": "guest",
+    "password": "guest",
+    "queueName": "event-spam-events"
+  },
   "defaultHeaders": {
     "Content-Type": "application/json",
     "Accept": "application/json"
   },
   "requests": [
     {
-      "name": "create-event",
+      "name": "post-event",
       "method": "POST",
-      "path": "/events",
-      "enabled": true,
-      "weight": 5,
-      "body": {
-        "name": "Generated Event",
-        "description": "Created by EventSpammer",
-        "status": "ACTIVE"
-      }
-    },
-    {
-      "name": "update-event",
-      "method": "PUT",
-      "path": "/events/1",
+      "path": "/spaces",
       "enabled": true,
       "weight": 3,
       "body": {
-        "name": "Updated Generated Event",
-        "description": "Updated by EventSpammer",
-        "status": "UPDATED"
+        "number": "A-102",
+        "occupied": true,
+        "section": {
+          "id": 1
+        },
+        "car": {
+          "licensePlate": "ABC-123",
+          "brand": "Toyota",
+          "model": "Corolla"
+        }
       }
-    },
-    {
-      "name": "delete-event",
-      "method": "DELETE",
-      "path": "/events/1",
-      "enabled": true,
-      "weight": 1,
-      "body": null
     }
   ]
 }

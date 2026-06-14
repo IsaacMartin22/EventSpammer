@@ -4,6 +4,8 @@ import com.eventspammer.config.AppConfig;
 import com.eventspammer.config.RequestDefinition;
 import com.eventspammer.http.ApiClient;
 import com.eventspammer.http.ApiResponse;
+import com.eventspammer.rabbitmq.EventSpamMessage;
+import com.eventspammer.rabbitmq.RabbitMqEventPublisher;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,11 +15,13 @@ public class EventSpammer {
 
     private final AppConfig config;
     private final ApiClient apiClient;
+    private final RabbitMqEventPublisher eventPublisher;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public EventSpammer(AppConfig config, ApiClient apiClient) {
+    public EventSpammer(AppConfig config, ApiClient apiClient, RabbitMqEventPublisher eventPublisher) {
         this.config = config;
         this.apiClient = apiClient;
+        this.eventPublisher = eventPublisher;
     }
 
     public void start() throws InterruptedException {
@@ -64,6 +68,20 @@ public class EventSpammer {
                 if (!response.body().isBlank()) {
                     System.out.println("Response body: " + response.body());
                 }
+
+                eventPublisher.publish(new EventSpamMessage(
+                        Instant.now(),
+                        sentRequests,
+                        request.getName(),
+                        request.getMethod().name(),
+                        request.getPath(),
+                        request.getBody(),
+                        true,
+                        response.statusCode(),
+                        response.durationMillis(),
+                        response.body(),
+                        null
+                ));
             } catch (Exception exception) {
                 sentRequests++;
 
@@ -75,6 +93,20 @@ public class EventSpammer {
                         request.getPath(),
                         exception.getMessage()
                 );
+
+                eventPublisher.publish(new EventSpamMessage(
+                        Instant.now(),
+                        sentRequests,
+                        request.getName(),
+                        request.getMethod().name(),
+                        request.getPath(),
+                        request.getBody(),
+                        false,
+                        null,
+                        null,
+                        null,
+                        exception.getMessage()
+                ));
             }
 
             if (config.getDelayMillis() > 0) {

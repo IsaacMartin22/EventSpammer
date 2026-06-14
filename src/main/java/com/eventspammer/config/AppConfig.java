@@ -19,6 +19,7 @@ public class AppConfig {
     private int requestTimeoutSeconds;
     private Map<String, String> defaultHeaders = new HashMap<>();
     private List<RequestDefinition> requests = new ArrayList<>();
+    private RabbitMqConfig rabbitMq = new RabbitMqConfig();
 
     public void validate() {
         if (baseUrl == null || baseUrl.isBlank()) {
@@ -40,6 +41,12 @@ public class AppConfig {
         if (requests == null || requests.isEmpty()) {
             throw new IllegalArgumentException("At least one request definition is required.");
         }
+
+        if (rabbitMq == null) {
+            rabbitMq = new RabbitMqConfig();
+        }
+
+        rabbitMq.validate();
 
         for (RequestDefinition request : requests) {
             request.validate();

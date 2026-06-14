@@ -3,6 +3,7 @@ package com.eventspammer;
 import com.eventspammer.config.AppConfig;
 import com.eventspammer.core.EventSpammer;
 import com.eventspammer.http.ApiClient;
+import com.eventspammer.rabbitmq.RabbitMqEventPublisher;
 import com.eventspammer.util.JsonFileLoader;
 
 import java.nio.file.Path;
@@ -15,15 +16,20 @@ public class EventSpammerApplication {
         try {
             AppConfig config = JsonFileLoader.load(Path.of(configPath), AppConfig.class);
             ApiClient apiClient = new ApiClient(config);
-            EventSpammer spammer = new EventSpammer(config, apiClient);
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                System.out.println();
-                System.out.println("Shutdown requested. Stopping EventSpammer...");
-                spammer.stop();
-            }));
+            try (RabbitMqEventPublisher eventPublisher = new RabbitMqEventPublisher(config.getRabbitMq())) {
+                eventPublisher.start();
 
-            spammer.start();
+                EventSpammer spammer = new EventSpammer(config, apiClient, eventPublisher);
+
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    System.out.println();
+                    System.out.println("Shutdown requested. Stopping EventSpammer...");
+                    spammer.stop();
+                }));
+
+                spammer.start();
+            }
         } catch (Exception exception) {
             System.err.println("Failed to start EventSpammer.");
             exception.printStackTrace();
