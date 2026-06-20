@@ -48,6 +48,7 @@ public class EventSpammer {
 
         while (running.get() && shouldContinue(sentRequests)) {
             RequestDefinition request = requestSelector.next();
+            config.refreshRandomizedBody(request);
 
             try {
                 ApiResponse response = apiClient.send(request);

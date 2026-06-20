@@ -10,6 +10,25 @@ import java.util.concurrent.ThreadLocalRandom;
 public class AppConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final List<String> CAR_COLORS = List.of("Red", "Blue", "Black", "White", "Silver", "Green");
+    private static final Map<String, List<String>> CAR_MAKES_AND_MODELS = Map.ofEntries(
+            Map.entry("Toyota", List.of("Corolla", "Camry", "RAV4", "Prius")),
+            Map.entry("Honda", List.of("Civic", "Accord", "CR-V", "Pilot")),
+            Map.entry("Ford", List.of("F-150", "Escape", "Explorer", "Mustang")),
+            Map.entry("Chevrolet", List.of("Silverado", "Malibu", "Equinox", "Tahoe")),
+            Map.entry("Nissan", List.of("Sentra", "Altima", "Rogue", "Pathfinder")),
+            Map.entry("Hyundai", List.of("Elantra", "Sonata", "Tucson", "Santa Fe")),
+            Map.entry("Kia", List.of("Forte", "K5", "Sportage", "Sorento")),
+            Map.entry("Mazda", List.of("Mazda3", "Mazda6", "CX-5", "CX-9")),
+            Map.entry("Subaru", List.of("Impreza", "Legacy", "Forester", "Outback")),
+            Map.entry("Volkswagen", List.of("Jetta", "Passat", "Golf", "Tiguan")),
+            Map.entry("BMW", List.of("3 Series", "5 Series", "X3", "X5")),
+            Map.entry("Mercedes-Benz", List.of("C-Class", "E-Class", "GLC", "GLE"))
+    );
+    private static final List<String> CAR_MAKES = CAR_MAKES_AND_MODELS.keySet().stream().toList();
+
+    private static final int UPPER_SPACE_RAND = 10;
+    private static final int UPPER_SECTION_RAND = 1;
 
     private final String baseUrl;
     private final boolean continuous;
@@ -21,10 +40,10 @@ public class AppConfig {
     private final RabbitMqConfig rabbitMq;
 
     public AppConfig() {
-        this.baseUrl = "http://localhost:8080/api";
+        this.baseUrl = "http://localhost:8081/api";
         this.continuous = true;
         this.totalRequests = 1_000_000;
-        this.delayMillis = 500;
+        this.delayMillis =  3 * 1000; // 3 Seconds
         this.requestTimeoutSeconds = 5;
 
         this.defaultHeaders = Map.of(
@@ -35,7 +54,8 @@ public class AppConfig {
         this.rabbitMq = createRabbitMqConfig();
 
         this.requests = List.of(
-                createPostEventRequest()
+//                createPostEventRequest(),
+                createPutEventRequest()
         );
 
         validate();
@@ -73,6 +93,19 @@ public class AppConfig {
         return rabbitMq;
     }
 
+    public void refreshRandomizedBody(RequestDefinition request) {
+        if (request == null || request.getName() == null) {
+            return;
+        }
+
+        switch (request.getName()) {
+//            case "post-event" -> request.setBody(createPostEventBody());
+            case "put-event" -> request.setBody(createPutEventBody());
+            default -> {
+            }
+        }
+    }
+
     private RabbitMqConfig createRabbitMqConfig() {
         RabbitMqConfig rabbitMqConfig = new RabbitMqConfig();
 
@@ -99,30 +132,73 @@ public class AppConfig {
         return request;
     }
 
+    private RequestDefinition createPutEventRequest() {
+        RequestDefinition request = new RequestDefinition();
+
+        request.setName("put-event");
+        request.setMethod(RequestMethod.PUT);
+        request.setPath("/spaces/" + 1);
+        request.setEnabled(true);
+        request.setWeight(3);
+        request.setBody(createPutEventBody());
+
+        return request;
+    }
+
     private JsonNode createPostEventBody() {
+        CarSpec carSpec = randomCarSpec();
+
         return OBJECT_MAPPER.valueToTree(Map.of(
-                "number", randomSpaceNumber(),
                 "occupied", true,
                 "section", Map.of(
                         "id", randomSectionId()
                 ),
                 "car", Map.of(
+                        "color", carSpec.color(),
                         "licensePlate", randomLicensePlate(),
-                        "brand", "Toyota",
-                        "model", "Corolla"
+                        "make", carSpec.make(),
+                        "model", carSpec.model(),
+                        "manufacturingYear", ThreadLocalRandom.current().nextInt(1990, 2024)
                 )
         ));
     }
 
+    private JsonNode createPutEventBody() {
+        CarSpec carSpec = randomCarSpec();
+
+        return OBJECT_MAPPER.valueToTree(Map.of(
+                "occupied", true,
+                "section", Map.of(
+                        "id", 1
+                ),
+                "car", Map.of(
+                        "color", carSpec.color(),
+                        "licensePlate", randomLicensePlate(),
+                        "make", carSpec.make(),
+                        "model", carSpec.model(),
+                        "manufacturingYear", ThreadLocalRandom.current().nextInt(1990, 2024)
+                )
+        ));
+    }
+
+    private CarSpec randomCarSpec() {
+        String color = CAR_COLORS.get(ThreadLocalRandom.current().nextInt(CAR_COLORS.size()));
+        String make = CAR_MAKES.get(ThreadLocalRandom.current().nextInt(CAR_MAKES.size()));
+        List<String> models = CAR_MAKES_AND_MODELS.get(make);
+        String model = models.get(ThreadLocalRandom.current().nextInt(models.size()));
+
+        return new CarSpec(color, make, model);
+    }
+
     private String randomSpaceNumber() {
         char letter = (char) ThreadLocalRandom.current().nextInt('A', 'Z' + 1);
-        int number = ThreadLocalRandom.current().nextInt(1, 1000);
+        int number = ThreadLocalRandom.current().nextInt(1, UPPER_SPACE_RAND);
 
         return "%c-%03d".formatted(letter, number);
     }
 
     private int randomSectionId() {
-        return ThreadLocalRandom.current().nextInt(1, 11);
+        return ThreadLocalRandom.current().nextInt(1, UPPER_SECTION_RAND);
     }
 
     private String randomLicensePlate() {
@@ -170,5 +246,8 @@ public class AppConfig {
         for (RequestDefinition request : requests) {
             request.validate();
         }
+    }
+
+    private record CarSpec(String color, String make, String model) {
     }
 }
