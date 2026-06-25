@@ -40,7 +40,7 @@ public class AppConfig {
     private final RabbitMqConfig rabbitMq;
 
     public AppConfig() {
-        this.baseUrl = "http://localhost:8081/api";
+        this.baseUrl = "https://api-service-i1ms.onrender.com/api";
         this.continuous = true;
         this.totalRequests = 1_000_000;
         this.delayMillis =  3 * 1000; // 3 Seconds

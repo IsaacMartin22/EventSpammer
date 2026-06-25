@@ -13,7 +13,7 @@ class AppConfigTest {
     void constructorCreatesValidDefaultConfiguration() {
         AppConfig config = new AppConfig();
 
-        assertEquals("http://localhost:8081/api", config.getBaseUrl());
+        assertEquals("https://api-service-i1ms.onrender.com/api", config.getBaseUrl());
         assertEquals(5, config.getRequestTimeoutSeconds());
         assertFalse(config.getRequests().isEmpty());
         assertNotNull(config.getRabbitMq());
