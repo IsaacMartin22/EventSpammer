@@ -8,6 +8,7 @@ import lombok.Setter;
 public class RabbitMqConfig {
 
     private boolean enabled = false;
+    private String uri;
     private String host = "localhost";
     private int port = 5672;
     private String username = "guest";
@@ -16,6 +17,11 @@ public class RabbitMqConfig {
 
     public void validate() {
         if (!enabled) {
+            return;
+        }
+
+        if (uri != null && !uri.isBlank()) {
+            validateQueueName();
             return;
         }
 
@@ -35,6 +41,10 @@ public class RabbitMqConfig {
             throw new IllegalArgumentException("rabbitMq.password is required when RabbitMQ is enabled.");
         }
 
+        validateQueueName();
+    }
+
+    private void validateQueueName() {
         if (queueName == null || queueName.isBlank()) {
             throw new IllegalArgumentException("rabbitMq.queueName is required when RabbitMQ is enabled.");
         }

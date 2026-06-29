@@ -34,7 +34,14 @@ Update these values before running:
 - `delayMillis`: delay between weighted requests.
 - `fixedGetUrls`: **exactly two absolute URLs** for scheduled GET requests.
 - `fixedGetIntervalMillis`: interval for fixed GET scheduler (default `30000`).
-- `rabbitMq`: host, port, credentials, and queue settings.
+- `rabbitMq`: host/port credentials or a broker URL, plus queue settings.
+
+RabbitMQ can now be configured via environment variables (useful for deployments):
+
+- `RABBITMQ_URI`: full `amqp://` or `amqps://` connection URL from your provider.
+- `RABBITMQ_ENABLED`: optional (`true`/`false`). Defaults to `true` when `RABBITMQ_URI` is set, otherwise `false`.
+- `RABBITMQ_QUEUE`: queue name (default `event-spam-events`).
+- `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USERNAME`, `RABBITMQ_PASSWORD`: used when `RABBITMQ_URI` is not provided.
 
 ## Build
 
@@ -49,6 +56,31 @@ java -jar target/event-spammer-1.0.0.jar
 ```
 
 Stop with `Ctrl+C` (or any shutdown signal). The app shuts down gracefully.
+
+## Run with Docker (App + RabbitMQ)
+
+Use Docker Compose to run both services together:
+
+```powershell
+docker compose up --build
+```
+
+What this does:
+
+- Starts RabbitMQ (`rabbitmq:3.13-management`) with credentials `eventspammer` / `eventspammer`.
+- Starts this app and injects Docker-networked RabbitMQ settings:
+  - `RABBITMQ_ENABLED=true`
+  - `RABBITMQ_URI=amqp://eventspammer:eventspammer@rabbitmq:5672/`
+  - `RABBITMQ_QUEUE=event-spam-events`
+- Exposes RabbitMQ ports:
+  - AMQP: `5672`
+  - Management UI: `15672`
+
+Stop and remove containers:
+
+```powershell
+docker compose down
+```
 
 ## Project notes
 

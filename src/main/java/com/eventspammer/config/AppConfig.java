@@ -116,14 +116,55 @@ public class AppConfig {
     private RabbitMqConfig createRabbitMqConfig() {
         RabbitMqConfig rabbitMqConfig = new RabbitMqConfig();
 
-        rabbitMqConfig.setEnabled(true);
-        rabbitMqConfig.setHost("localhost");
-        rabbitMqConfig.setPort(5672);
-        rabbitMqConfig.setUsername("guest");
-        rabbitMqConfig.setPassword("guest");
-        rabbitMqConfig.setQueueName("event-spam-events");
+        String rabbitMqUri = readTrimmedEnv("RABBITMQ_URI", null);
+        boolean enabledByDefault = rabbitMqUri != null;
+
+        rabbitMqConfig.setEnabled(readBooleanEnv("RABBITMQ_ENABLED", enabledByDefault));
+        rabbitMqConfig.setUri(rabbitMqUri);
+        rabbitMqConfig.setHost(readTrimmedEnv("RABBITMQ_HOST", "localhost"));
+        rabbitMqConfig.setPort(readIntEnv("RABBITMQ_PORT", 5672));
+        rabbitMqConfig.setUsername(readTrimmedEnv("RABBITMQ_USERNAME", "guest"));
+        rabbitMqConfig.setPassword(readRawEnv("RABBITMQ_PASSWORD", "guest"));
+        rabbitMqConfig.setQueueName(readTrimmedEnv("RABBITMQ_QUEUE", "event-spam-events"));
 
         return rabbitMqConfig;
+    }
+
+    private String readTrimmedEnv(String key, String defaultValue) {
+        String value = System.getenv(key);
+        if (value == null) {
+            return defaultValue;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? defaultValue : trimmed;
+    }
+
+    private String readRawEnv(String key, String defaultValue) {
+        String value = System.getenv(key);
+        return value == null ? defaultValue : value;
+    }
+
+    private int readIntEnv(String key, int defaultValue) {
+        String value = readTrimmedEnv(key, null);
+        if (value == null) {
+            return defaultValue;
+        }
+
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ignored) {
+            return defaultValue;
+        }
+    }
+
+    private boolean readBooleanEnv(String key, boolean defaultValue) {
+        String value = readTrimmedEnv(key, null);
+        if (value == null) {
+            return defaultValue;
+        }
+
+        return Boolean.parseBoolean(value);
     }
 
     private RequestDefinition createPostEventRequest() {

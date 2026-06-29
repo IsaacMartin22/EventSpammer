@@ -28,10 +28,15 @@ public class RabbitMqEventPublisher implements AutoCloseable {
         }
 
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(config.getHost());
-        factory.setPort(config.getPort());
-        factory.setUsername(config.getUsername());
-        factory.setPassword(config.getPassword());
+        if (config.getUri() != null && !config.getUri().isBlank()) {
+            // Hosted RabbitMQ providers usually expose full amqp/amqps URLs.
+            factory.setUri(config.getUri());
+        } else {
+            factory.setHost(config.getHost());
+            factory.setPort(config.getPort());
+            factory.setUsername(config.getUsername());
+            factory.setPassword(config.getPassword());
+        }
 
         connection = factory.newConnection();
         channel = connection.createChannel();

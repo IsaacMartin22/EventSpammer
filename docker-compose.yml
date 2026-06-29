@@ -1,0 +1,31 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: event-spammer-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: eventspammer
+      RABBITMQ_DEFAULT_PASS: eventspammer
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  event-spammer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: event-spammer-app
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_ENABLED: "true"
+      RABBITMQ_URI: amqp://eventspammer:eventspammer@rabbitmq:5672/
+      RABBITMQ_QUEUE: event-spam-events
+

@@ -30,6 +30,18 @@ class RabbitMqConfigTest {
     }
 
     @Test
+    void validateAllowsUriConfigurationWhenEnabled() {
+        RabbitMqConfig config = validEnabledConfig();
+        config.setUri("amqps://user:pass@broker.example.com/vhost");
+        config.setHost(" ");
+        config.setPort(0);
+        config.setUsername("");
+        config.setPassword(null);
+
+        assertDoesNotThrow(config::validate);
+    }
+
+    @Test
     void validateRejectsMissingHostWhenEnabled() {
         RabbitMqConfig config = validEnabledConfig();
         config.setHost(" ");
